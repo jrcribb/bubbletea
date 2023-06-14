@@ -37,18 +37,20 @@ func WithOutput(output io.Writer) ProgramOption {
 }
 
 // WithInput sets the input which, by default, is stdin. In most cases you
-// won't need to use this.
+// won't need to use this. To disable input entirely pass nil.
+//
+//	p := NewProgram(model, WithInput(nil))
 func WithInput(input io.Reader) ProgramOption {
 	return func(p *Program) {
 		p.input = input
-		p.startupOptions |= withCustomInput
+		p.inputType = customInput
 	}
 }
 
 // WithInputTTY opens a new TTY for input (or console input device on Windows).
 func WithInputTTY() ProgramOption {
 	return func(p *Program) {
-		p.startupOptions |= withInputTTY
+		p.inputType = ttyInput
 	}
 }
 
@@ -67,6 +69,14 @@ func WithoutSignalHandler() ProgramOption {
 func WithoutCatchPanics() ProgramOption {
 	return func(p *Program) {
 		p.startupOptions |= withoutCatchPanics
+	}
+}
+
+// WithoutSignals will ignore OS signals.
+// This is mainly useful for testing.
+func WithoutSignals() ProgramOption {
+	return func(p *Program) {
+		p.ignoreSignals = true
 	}
 }
 
@@ -188,5 +198,14 @@ func WithANSICompressor() ProgramOption {
 func WithFilter(filter func(Model, Msg) Msg) ProgramOption {
 	return func(p *Program) {
 		p.filter = filter
+	}
+}
+
+// WithMaxFPS sets a custom maximum FPS at which the renderer should run. If
+// less than 1, the default value of 60 will be used. If over 120, the FPS
+// will be capped at 120.
+func WithFPS(fps int) ProgramOption {
+	return func(p *Program) {
+		p.fps = fps
 	}
 }
