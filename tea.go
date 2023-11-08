@@ -18,6 +18,7 @@ import (
 	"os/signal"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/containerd/console"
@@ -57,8 +58,6 @@ type Model interface {
 // to another part of your program. That can almost always be done in the
 // update function.
 type Cmd func() Msg
-
-type handlers []chan struct{}
 
 type inputType int
 
@@ -102,6 +101,29 @@ const (
 	withoutCatchPanics
 )
 
+// handlers manages series of channels returned by various processes. It allows
+// us to wait for those processes to terminate before exiting the program.
+type handlers []chan struct{}
+
+// Adds a channel to the list of handlers. We wait for all handlers to terminate
+// gracefully on shutdown.
+func (h *handlers) add(ch chan struct{}) {
+	*h = append(*h, ch)
+}
+
+// shutdown waits for all handlers to terminate.
+func (h handlers) shutdown() {
+	var wg sync.WaitGroup
+	for _, ch := range h {
+		wg.Add(1)
+		go func(ch chan struct{}) {
+			<-ch
+			wg.Done()
+		}(ch)
+	}
+	wg.Wait()
+}
+
 // Program is a terminal user interface.
 type Program struct {
 	initialModel Model
@@ -132,7 +154,7 @@ type Program struct {
 
 	// was the altscreen active before releasing the terminal?
 	altScreenWasActive bool
-	ignoreSignals      bool
+	ignoreSignals      uint32
 
 	// Stores the original reference to stdin for cases where input is not a
 	// TTY on windows and we've automatically opened CONIN$ to receive input.
@@ -217,7 +239,7 @@ func (p *Program) handleSignals() chan struct{} {
 				return
 
 			case <-sig:
-				if !p.ignoreSignals {
+				if atomic.LoadUint32(&p.ignoreSignals) == 0 {
 					p.msgs <- QuitMsg{}
 					return
 				}
@@ -611,7 +633,7 @@ func (p *Program) shutdown(kill bool) {
 // ReleaseTerminal restores the original terminal state and cancels the input
 // reader. You can return control to the Program with RestoreTerminal.
 func (p *Program) ReleaseTerminal() error {
-	p.ignoreSignals = true
+	atomic.StoreUint32(&p.ignoreSignals, 1)
 	p.cancelReader.Cancel()
 	p.waitForReadLoop()
 
@@ -627,7 +649,7 @@ func (p *Program) ReleaseTerminal() error {
 // terminal to the former state when the program was running, and repaints.
 // Use it to reinitialize a Program after running ReleaseTerminal.
 func (p *Program) RestoreTerminal() error {
-	p.ignoreSignals = false
+	atomic.StoreUint32(&p.ignoreSignals, 0)
 
 	if err := p.initTerminal(); err != nil {
 		return err
@@ -677,23 +699,4 @@ func (p *Program) Printf(template string, args ...interface{}) {
 	p.msgs <- printLineMessage{
 		messageBody: fmt.Sprintf(template, args...),
 	}
-}
-
-// Adds a handler to the list of handlers. We wait for all handlers to terminate
-// gracefully on shutdown.
-func (h *handlers) add(ch chan struct{}) {
-	*h = append(*h, ch)
-}
-
-// Shutdown waits for all handlers to terminate.
-func (h handlers) shutdown() {
-	var wg sync.WaitGroup
-	for _, ch := range h {
-		wg.Add(1)
-		go func(ch chan struct{}) {
-			<-ch
-			wg.Done()
-		}(ch)
-	}
-	wg.Wait()
 }

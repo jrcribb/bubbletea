@@ -3,6 +3,7 @@ package tea
 import (
 	"context"
 	"io"
+	"sync/atomic"
 
 	"github.com/muesli/termenv"
 )
@@ -76,7 +77,7 @@ func WithoutCatchPanics() ProgramOption {
 // This is mainly useful for testing.
 func WithoutSignals() ProgramOption {
 	return func(p *Program) {
-		p.ignoreSignals = true
+		atomic.StoreUint32(&p.ignoreSignals, 1)
 	}
 }
 
@@ -201,7 +202,7 @@ func WithFilter(filter func(Model, Msg) Msg) ProgramOption {
 	}
 }
 
-// WithMaxFPS sets a custom maximum FPS at which the renderer should run. If
+// WithFPS sets a custom maximum FPS at which the renderer should run. If
 // less than 1, the default value of 60 will be used. If over 120, the FPS
 // will be capped at 120.
 func WithFPS(fps int) ProgramOption {
