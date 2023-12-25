@@ -341,6 +341,7 @@ For some Bubble Tea programs in production, see:
 * [gh-dash](https://www.github.com/dlvhdr/gh-dash): a GitHub CLI extension for PRs and issues
 * [gitflow-toolkit](https://github.com/mritd/gitflow-toolkit): a GitFlow submission tool
 * [Glow](https://github.com/charmbracelet/glow): a markdown reader, browser, and online markdown stash
+* [go-sweep](https://github.com/maxpaulus43/go-sweep): Minesweeper in the terminal
 * [gocovsh](https://github.com/orlangure/gocovsh): explore Go coverage reports from the CLI
 * [got](https://github.com/fedeztk/got): a simple translator and text-to-speech app build on top of simplytranslate's APIs
 * [hiSHtory](https://github.com/ddworken/hishtory): your shell history in context, synced, and queryable
@@ -352,6 +353,7 @@ For some Bubble Tea programs in production, see:
 * [mergestat](https://github.com/mergestat/mergestat): run SQL queries on git repositories
 * [Neon Modem Overdrive](https://github.com/mrusme/neonmodem): a BBS-style TUI client for Discourse, Lemmy, Lobste.rs and Hacker News
 * [Noted](https://github.com/torbratsberg/noted): a note viewer and manager
+* [nom](https://github.com/guyfedwards/nom): RSS reader and manager
 * [pathos](https://github.com/chip/pathos): a PATH env variable editor
 * [portal](https://github.com/ZinoKader/portal): secure transfers between computers
 * [redis-viewer](https://github.com/SaltFishPr/redis-viewer): a Redis databases browser
