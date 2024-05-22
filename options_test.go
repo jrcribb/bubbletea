@@ -2,6 +2,7 @@ package tea
 
 import (
 	"bytes"
+	"os"
 	"sync/atomic"
 	"testing"
 )
@@ -10,8 +11,8 @@ func TestOptions(t *testing.T) {
 	t.Run("output", func(t *testing.T) {
 		var b bytes.Buffer
 		p := NewProgram(nil, WithOutput(&b))
-		if p.output.TTY() != nil {
-			t.Errorf("expected output to custom, got %v", p.output.TTY().Fd())
+		if f, ok := p.output.(*os.File); ok {
+			t.Errorf("expected output to custom, got %v", f.Fd())
 		}
 	})
 
@@ -66,7 +67,6 @@ func TestOptions(t *testing.T) {
 			var b bytes.Buffer
 			exercise(t, WithInput(&b), customInput)
 		})
-
 	})
 
 	t.Run("startup options", func(t *testing.T) {
@@ -79,6 +79,10 @@ func TestOptions(t *testing.T) {
 
 		t.Run("alt screen", func(t *testing.T) {
 			exercise(t, WithAltScreen(), withAltScreen)
+		})
+
+		t.Run("bracketed paste disabled", func(t *testing.T) {
+			exercise(t, WithoutBracketedPaste(), withoutBracketedPaste)
 		})
 
 		t.Run("ansi compression", func(t *testing.T) {
@@ -115,8 +119,8 @@ func TestOptions(t *testing.T) {
 	})
 
 	t.Run("multiple", func(t *testing.T) {
-		p := NewProgram(nil, WithMouseAllMotion(), WithAltScreen(), WithInputTTY())
-		for _, opt := range []startupOptions{withMouseAllMotion, withAltScreen} {
+		p := NewProgram(nil, WithMouseAllMotion(), WithoutBracketedPaste(), WithAltScreen(), WithInputTTY())
+		for _, opt := range []startupOptions{withMouseAllMotion, withoutBracketedPaste, withAltScreen} {
 			if !p.startupOptions.has(opt) {
 				t.Errorf("expected startup options have %v, got %v", opt, p.startupOptions)
 			}
